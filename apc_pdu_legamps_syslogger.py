@@ -2,15 +2,17 @@
 
 __author__ = 'Will Dennis'
 __email__ = 'wdennis@nec-labs.com'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 import sys
 import logging
-from logging.handlers import SysLogHandler
 import socket
 
+from logging.handlers import SysLogHandler
+from multiprocessing import Process, Queue, current_process
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.smi import builder
+
 
 
 # site-specific variables
@@ -72,19 +74,37 @@ def poll_pdu_and_syslog_result(pdu):
     )
 
     if errorIndication:
-        print(errorIndication)
+        #print(errorIndication)
+        return 'Unsuccessful - error was: %s' % errorIndication
     elif errorStatus:
         print('{0:s} at {1:s}'.format(errorStatus.prettyPrint(),
                                       errorIndex and varBindTable[-1][int(errorIndex) - 1] or '?')
-             )
+        )
+        return 'Failed'
     else:
         for varBindTableRow in varBindTable:
             for name, val in varBindTableRow:
                 leg = name.prettyPrint().lstrip("PowerNet-MIB::rPDULoadStatusLoad.").strip('"')
                 amps = float(val.prettyPrint()) / 10
                 logmsg = 'PDU=%s Leg=%s Amps=%s' % (pdu, leg, amps)
-                print(logmsg)
+                # print(logmsg)
                 LOGGER.info(logmsg)
+                return 'Successful'
+
+
+def worker(work_queue, done_queue):
+    """
+    Worker function for multiprocessing stage
+    :param work_queue:
+    :param done_queue:
+    """
+    try:
+        for pdu in iter(work_queue.get, 'STOP'):
+            status_code = poll_pdu_and_syslog_result(pdu)
+            done_queue.put("%s - %s logging was %s." % (current_process().name, pdu, status_code))
+    except Exception, e:
+        done_queue.put("%s failed on %s with: %s" % (current_process().name, pdu, e.message))
+    return True
 
 
 def main():
@@ -92,8 +112,28 @@ def main():
     Main entry point of script.
     """
     pdus = get_target_list()
+
+    workers = 2
+    work_queue = Queue()
+    done_queue = Queue()
+    processes = []
+
     for this_pdu in pdus:
-        poll_pdu_and_syslog_result(this_pdu)
+        work_queue.put(this_pdu)
+
+    for w in xrange(workers):
+        p = Process(target=worker, args=(work_queue, done_queue))
+        p.start()
+        processes.append(p)
+        work_queue.put('STOP')
+
+    for p in processes:
+        p.join()
+
+    done_queue.put('STOP')
+
+    for status in iter(done_queue.get, 'STOP'):
+        print status
 
 
 if __name__ == '__main__':
