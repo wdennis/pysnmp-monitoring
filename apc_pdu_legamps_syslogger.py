@@ -65,7 +65,7 @@ def poll_pdu_and_syslog_result(pdu):
     :param pdu:
     """
     errorIndication, errorStatus, errorIndex, varBindTable = CMDGEN.nextCmd(
-        cmdgen.CommunityData(ROCOMM),
+        cmdgen.CommunityData(ROCOMM, mpModel=0),  # mpModel=0 == use SNMP v1
         cmdgen.UdpTransportTarget((pdu, 161)),
         cmdgen.MibVariable('PowerNet-MIB', 'rPDULoadStatusLoad'),  # '.1.3.6.1.4.1.318.1.1.12.2.3.1.1.2'
         lookupNames=True, lookupValues=True
