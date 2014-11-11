@@ -89,7 +89,7 @@ def poll_pdu_and_syslog_result(pdu):
                 logmsg = 'PDU=%s Leg=%s Amps=%s' % (pdu, leg, amps)
                 # print(logmsg)
                 LOGGER.info(logmsg)
-                return 'Successful'
+        return 'Successful'
 
 
 def worker(work_queue, done_queue):
