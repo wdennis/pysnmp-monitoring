@@ -2,7 +2,7 @@
 
 __author__ = 'Will Dennis'
 __email__ = 'wdennis@nec-labs.com'
-__version__ = '1.1.0'
+__version__ = '1.2.0'
 
 import sys
 import logging
@@ -12,6 +12,7 @@ from logging.handlers import SysLogHandler
 from multiprocessing import Process, Queue, current_process
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.smi import builder
+from device_list_generator import yield_device_list
 
 
 
@@ -19,6 +20,7 @@ from pysnmp.smi import builder
 SYSLOGHOST = '192.168.1.147'
 MYMIBDIR = '/root'
 ROCOMM = 'testapc'
+PDUCSV = '/var/opt/pdu-list.csv'
 
 
 # load mibs
@@ -32,16 +34,16 @@ MIBBUILDER.setMibSources(*MIBSOURCES)
 
 def get_target_list():
     """
-    Build list of PDUs to query
-    TODO: Come up with way to get list from external source...
-    Maybe from DNS?
+    Returns list of PDUs to query
+    TODO: Needs refactoring, funct doesn't really do anything now
     """
-    all_pdus = ['testpdu1', 'testpdu2']  # for testing
+    #all_pdus = ['testpdu1', 'testpdu2']  # for testing
+    all_pdus = yield_device_list(PDUCSV)
     return all_pdus
 
 
 class ContextFilter(logging.Filter):
-    """ Filter to inject contextual data into the log message."""
+    """ Filter to inject contextual data into the log message. """
     hostname = socket.gethostname()
 
     def filter(self, record):
