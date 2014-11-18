@@ -32,15 +32,6 @@ MIBSOURCES = MIBBUILDER.getMibSources() + (
 MIBBUILDER.setMibSources(*MIBSOURCES)
 
 
-def get_target_list():
-    """
-    Returns list of PDUs to query
-    TODO: Needs refactoring, funct doesn't really do anything now
-    """
-    #all_pdus = ['testpdu1', 'testpdu2']  # for testing
-    all_pdus = yield_device_list(PDUCSV)
-    return all_pdus
-
 
 class ContextFilter(logging.Filter):
     """ Filter to inject contextual data into the log message. """
@@ -113,7 +104,7 @@ def main():
     """
     Main entry point of script.
     """
-    pdus = get_target_list()
+    pdus = yield_device_list(PDUCSV)
 
     workers = 2
     work_queue = Queue()
