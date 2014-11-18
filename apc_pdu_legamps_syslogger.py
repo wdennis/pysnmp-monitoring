@@ -2,7 +2,7 @@
 
 __author__ = 'Will Dennis'
 __email__ = 'wdennis@nec-labs.com'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 import sys
 import logging
@@ -15,12 +15,12 @@ from pysnmp.smi import builder
 from device_list_generator import yield_device_list
 
 
-
 # site-specific variables
 SYSLOGHOST = '192.168.1.147'
 MYMIBDIR = '/root'
 ROCOMM = 'testapc'
 PDUCSV = '/var/opt/pdu-list.csv'
+NUM_WORKER_PROCS = 2
 
 
 # load mibs
@@ -30,7 +30,6 @@ MIBSOURCES = MIBBUILDER.getMibSources() + (
     builder.DirMibSource(MYMIBDIR),
 )
 MIBBUILDER.setMibSources(*MIBSOURCES)
-
 
 
 class ContextFilter(logging.Filter):
@@ -106,7 +105,6 @@ def main():
     """
     pdus = yield_device_list(PDUCSV)
 
-    workers = 2
     work_queue = Queue()
     done_queue = Queue()
     processes = []
@@ -114,7 +112,7 @@ def main():
     for this_pdu in pdus:
         work_queue.put(this_pdu)
 
-    for w in xrange(workers):
+    for w in xrange(NUM_WORKER_PROCS):
         p = Process(target=worker, args=(work_queue, done_queue))
         p.start()
         processes.append(p)

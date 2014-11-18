@@ -14,8 +14,7 @@ def yield_device_list(csvfile):
     :return:
     """
     dl = pandas.read_csv(csvfile)
-    devlist = dl.Hostname.tolist()
-    return devlist
+    return dl.Hostname.tolist()
 
 if __name__ == '__main__':
     pass
